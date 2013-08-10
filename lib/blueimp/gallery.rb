@@ -1,8 +1,2 @@
 require "blueimp/gallery/version"
-require "blueimp/gallery/engine"
-
-module Blueimp
-  module Gallery
-    
-  end
-end
+require "blueimp/gallery/engine" if defined?(::Rails)

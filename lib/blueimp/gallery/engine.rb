@@ -1,7 +1,6 @@
-module StaticAssets
-  class Engine < ::Rails::Engine
-    initializer 'blueimp-gallery.load_static_assets' do |app|
-      app.middleware.use ::ActionDispatch::Static, "#{root}/vendor"
+module Blueimp
+  module Gallery
+    class Engine < ::Rails::Engine
     end
   end
 end
