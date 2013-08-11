@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.files         = `git ls-files`.split($/)
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler", "~> 1.3"
-  spec.add_development_dependency "rake"
+  spec.add_dependency "railties", ">= 3.1.0"
+
+  spec.add_development_dependency "sprockets-rails", "~> 2.0.0"
 end
