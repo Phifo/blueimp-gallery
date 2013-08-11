@@ -147,7 +147,7 @@ or CoffeeScript if you want to add the script as an asset:
 blueimp.Gallery document.getElementById("links").getElementsByTagName("a"),
   container: "#blueimp-gallery-carousel"
   carousel: true
-``
+```
 
 ## More Features
 
