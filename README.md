@@ -41,7 +41,7 @@ Add this line to your `app/assets/stylesheets/application.css`
 
 In case you want a minimal version and you already understand how the plugin works, you can add the necessary assets.
 
-    *= require blueimp-gallery.css
+    *= require blueimp-gallery
     *= require blueimp-gallery-indicator
     *= require blueimp-gallery-video
 
@@ -147,7 +147,7 @@ or CoffeeScript if you want to add the script as an asset:
 blueimp.Gallery document.getElementById("links").getElementsByTagName("a"),
   container: "#blueimp-gallery-carousel"
   carousel: true
-```
+``
 
 ## More Features
 
