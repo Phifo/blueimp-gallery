@@ -2,6 +2,9 @@
 
 blueimp Gallery is an image and video gallery featuring carousel and lightbox gallery with mouse and keyboard navigation, transition effects and more. This amazing plugin was created by [Sebastian Tschan](https://github.com/blueimp).
 
+[![Gem Version](https://badge.fury.io/rb/blueimp-gallery.png)](http://badge.fury.io/rb/blueimp-gallery)
+[![Build Status](https://travis-ci.org/Phifo/blueimp-gallery.png?branch=master)](https://travis-ci.org/Phifo/blueimp-gallery)
+
 * blueimp Gallery version 2.7.3
 * Official Website: http://blueimp.github.io/Gallery/
 
@@ -24,9 +27,23 @@ Add this line to your `app/assets/javascripts/application.js`
 
     //= require blueimp-gallery-all
 
+In case you want a minimal version and you already understand how the plugin works, you can add the necessary assets.
+
+    //= require blueimp-gallery
+    //= require blueimp-gallery-fullscreen
+    //= require blueimp-gallery-indicator
+    //= require blueimp-gallery-video
+    //= require jquery.blueimp-gallery
+
 Add this line to your `app/assets/stylesheets/application.css`
 
     *= require blueimp-gallery-all
+
+In case you want a minimal version and you already understand how the plugin works, you can add the necessary assets.
+
+    *= require blueimp-gallery.css
+    *= require blueimp-gallery-indicator
+    *= require blueimp-gallery-video
 
 ## Usage
 
@@ -54,13 +71,13 @@ Add a list of image links you want to show into your gallery:
 ```html
 <div id="links">
   <a href="images/photo1.jpg" title="Photo 1">
-      <img src="images/thumb_photo1.jpg" alt="Photo 1">
+    <img src="images/thumb_photo1.jpg" alt="Photo 1">
   </a>
   <a href="images/photo2.jpg" title="Photo 2">
-      <img src="images/thumb_photo2.jpg" alt="Photo 2">
+    <img src="images/thumb_photo2.jpg" alt="Photo 2">
   </a>
   <a href="images/photo3.jpg" title="Photo 3">
-      <img src="images/thumb_photo3.jpg" alt="Photo 3">
+    <img src="images/thumb_photo3.jpg" alt="Photo 3">
   </a>
 </div>
 ```
@@ -101,12 +118,12 @@ If you want a Carousel gallery, replace the html snippet with:
 
 ```html
 <div id="blueimp-gallery-carousel" class="blueimp-gallery blueimp-gallery-carousel">
-    <div class="slides"></div>
-    <h3 class="title"></h3>
-    <a class="prev">‹</a>
-    <a class="next">›</a>
-    <a class="play-pause"></a>
-    <ol class="indicator"></ol>
+  <div class="slides"></div>
+  <h3 class="title"></h3>
+  <a class="prev">‹</a>
+  <a class="next">›</a>
+  <a class="play-pause"></a>
+  <ol class="indicator"></ol>
 </div>
 ```
 
@@ -123,6 +140,14 @@ blueimp.Gallery(
 );
 </script>
 ```
+
+or CoffeeScript if you want to add the script as an asset:
+
+```coffeescript
+blueimp.Gallery document.getElementById("links").getElementsByTagName("a"),
+  container: "#blueimp-gallery-carousel"
+  carousel: true
+``
 
 ## More Features
 
