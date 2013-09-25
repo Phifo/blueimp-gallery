@@ -1,5 +1,5 @@
 /*
- * blueimp Gallery jQuery plugin 1.1.0
+ * blueimp Gallery jQuery plugin 1.2.0
  * https://github.com/blueimp/Gallery
  *
  * Copyright 2013, Sebastian Tschan
@@ -29,7 +29,7 @@
 
     // Global click handler to open links with data-gallery attribute
     // in the Gallery lightbox:
-    $(document.body).on('click', '[data-gallery]', function (event) {
+    $(document).on('click', '[data-gallery]', function (event) {
         // Get the container id from the data-gallery attribute:
         var id = $(this).data('gallery'),
             widget = $(id),
@@ -46,7 +46,10 @@
                     onopen: function () {
                         container
                             .data('gallery', this)
-                            .trigger('open', arguments);
+                            .trigger('open');
+                    },
+                    onopened: function () {
+                        container.trigger('opened');
                     },
                     onslide: function () {
                         container.trigger('slide', arguments);
@@ -58,8 +61,11 @@
                         container.trigger('slidecomplete', arguments);
                     },
                     onclose: function () {
+                        container.trigger('close');
+                    },
+                    onclosed: function () {
                         container
-                            .trigger('close')
+                            .trigger('closed')
                             .removeData('gallery');
                     }
                 }

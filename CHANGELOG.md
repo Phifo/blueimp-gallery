@@ -1,3 +1,8 @@
+## v2.9.0.0
+
+* Change the versioning scheme.
+* Update to Blueimp Gallery 2.9.0.
+
 ## v1.0.0
 
 * Stable version.
