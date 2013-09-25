@@ -5,7 +5,6 @@ blueimp Gallery is an image and video gallery featuring carousel and lightbox ga
 [![Gem Version](https://badge.fury.io/rb/blueimp-gallery.png)](http://badge.fury.io/rb/blueimp-gallery)
 [![Build Status](https://travis-ci.org/Phifo/blueimp-gallery.png?branch=master)](https://travis-ci.org/Phifo/blueimp-gallery)
 
-* blueimp Gallery version 2.7.3
 * Official Website: http://blueimp.github.io/Gallery/
 
 
