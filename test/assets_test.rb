@@ -20,6 +20,10 @@ class AssetsTest < ActionDispatch::IntegrationTest
     assert_response :success
     get 'assets/jquery.blueimp-gallery.js'
     assert_response :success
+    get 'assets/blueimp-gallery-youtube.js'
+    assert_response :success
+    get 'assets/blueimp-gallery-vimeo.js'
+    assert_response :success
   end
 
   test 'has stylesheets assets' do

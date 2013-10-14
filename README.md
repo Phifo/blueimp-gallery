@@ -150,7 +150,7 @@ blueimp.Gallery document.getElementById("links").getElementsByTagName("a"),
 
 ## More Features
 
-blueimp Gallery has a lot more features and options as adding control keys, fullscreen, slide interval, etc. The complete documentation is on the [blueimp Gallery site](https://github.com/blueimp/Gallery).
+blueimp Gallery has a lot more features and options as adding control keys, fullscreen, slide interval, video support (youtube and vimeo) etc. The complete documentation is on the [blueimp Gallery site](https://github.com/blueimp/Gallery).
 
 ## Contributing
 
