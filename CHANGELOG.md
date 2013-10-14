@@ -1,3 +1,7 @@
+## v2.11.0.1
+
+* Fix: Added missing javascript files
+
 ## v2.11.0.0
 
 * Update to Blueimp Gallery 2.11.0.
