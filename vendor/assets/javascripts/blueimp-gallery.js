@@ -1,5 +1,5 @@
 /*
- * blueimp Gallery JS 2.11.0
+ * blueimp Gallery JS 2.14.1
  * https://github.com/blueimp/Gallery
  *
  * Copyright 2013, Sebastian Tschan
@@ -12,8 +12,7 @@
  * http://www.opensource.org/licenses/MIT
  */
 
-/*jslint regexp: true */
-/*global define, window, document, DocumentTouch */
+/* global define, window, document, DocumentTouch */
 
 (function (factory) {
     'use strict';
@@ -31,14 +30,21 @@
     'use strict';
 
     function Gallery(list, options) {
-        if (!list || !list.length || document.body.style.maxHeight === undefined) {
+        if (document.body.style.maxHeight === undefined) {
             // document.body.style.maxHeight is undefined on IE6 and lower
-            return false;
+            return null;
         }
         if (!this || this.options !== Gallery.prototype.options) {
             // Called as function instead of as constructor,
             // so we simply return a new instance:
             return new Gallery(list, options);
+        }
+        if (!list || !list.length) {
+            this.console.log(
+                'blueimp Gallery: No or empty list provided as first argument.',
+                list
+            );
+            return;
         }
         this.list = list;
         this.num = list.length;
@@ -117,7 +123,9 @@
             closeOnSwipeUpOrDown: true,
             // Emulate touch events on mouse-pointer devices such as desktop browsers:
             emulateTouchEvents: true,
-            // Hide the page scrollbars: 
+            // Stop touch events from bubbling up to ancestor elements of the Gallery:
+            stopTouchEventsPropagation: false,
+            // Hide the page scrollbars:
             hidePageScrollbars: true,
             // Stops any touches on the container from scrolling the page:
             disableScroll: true,
@@ -186,6 +194,10 @@
             startSlideshow: true
         },
 
+        console: window.console && typeof window.console.log === 'function' ?
+            window.console :
+            {log: function () {}},
+
         // Detect touch, transition, transform and background-size support:
         support: (function (element) {
             var support = {
@@ -210,10 +222,10 @@
                         prefix: ''
                     }
                 },
-                prop,
-                transition,
-                translateZ,
                 elementTests = function () {
+                    var transition = support.transition,
+                        prop,
+                        translateZ;
                     document.body.appendChild(element);
                     if (transition) {
                         prop = transition.name.slice(0, -9) + 'ransform';
@@ -242,15 +254,17 @@
                     }
                     document.body.removeChild(element);
                 };
-            for (prop in transitions) {
-                if (transitions.hasOwnProperty(prop) &&
-                        element.style[prop] !== undefined) {
-                    transition = transitions[prop];
-                    transition.name = prop;
-                    support.transition = transition;
-                    break;
+            (function (support, transitions) {
+                var prop;
+                for (prop in transitions) {
+                    if (transitions.hasOwnProperty(prop) &&
+                            element.style[prop] !== undefined) {
+                        support.transition = transitions[prop];
+                        support.transition.name = prop;
+                        break;
+                    }
                 }
-            }
+            }(support, transitions));
             if (document.body) {
                 elementTests();
             } else {
@@ -285,7 +299,7 @@
             window.clearTimeout(this.timeout);
             var index = this.index,
                 direction,
-                natural_direction,
+                naturalDirection,
                 diff;
             if (index === to || this.num === 1) {
                 return;
@@ -293,7 +307,7 @@
             if (!speed) {
                 speed = this.options.transitionSpeed;
             }
-            if (this.support.transition) {
+            if (this.support.transform) {
                 if (!this.options.continuous) {
                     to = this.circle(to);
                 }
@@ -301,11 +315,11 @@
                 direction = Math.abs(index - to) / (index - to);
                 // Get the actual position of the slide:
                 if (this.options.continuous) {
-                    natural_direction = direction;
+                    naturalDirection = direction;
                     direction = -this.positions[this.circle(to)] / this.slideWidth;
                     // If going forward but to < index, use to = slides.length + to
                     // If going backward but to > index, use to = -slides.length + to
-                    if (direction !== natural_direction) {
+                    if (direction !== naturalDirection) {
                         to = -direction * this.num + to;
                     }
                 }
@@ -385,6 +399,14 @@
 
         add: function (list) {
             var i;
+            if (!list.concat) {
+                // Make a real array out of the list to add:
+                list = Array.prototype.slice.call(list);
+            }
+            if (!this.list.concat) {
+                // Make a real array out of the Gallery list:
+                this.list = Array.prototype.slice.call(this.list);
+            }
             this.list = this.list.concat(list);
             this.num = this.list.length;
             if (this.num > 2 && this.options.continuous === null) {
@@ -510,6 +532,14 @@
             }
         },
 
+        stopPropagation: function (event) {
+            if (event.stopPropagation) {
+                event.stopPropagation();
+            } else {
+                event.cancelBubble = true;
+            }
+        },
+
         onresize: function () {
             this.initSlides(true);
         },
@@ -521,6 +551,7 @@
                     event.target.nodeName !== 'VIDEO') {
                 // Preventing the default mousedown action is required
                 // to make touch emulation work with Firefox:
+                event.preventDefault();
                 (event.originalEvent || event).touches = [{
                     pageX: event.pageX,
                     pageY: event.pageY
@@ -558,6 +589,9 @@
         },
 
         ontouchstart: function (event) {
+            if (this.options.stopTouchEventsPropagation) {
+                this.stopPropagation(event);
+            }
             // jQuery doesn't copy touch event properties by default,
             // so we have to access the originalEvent object:
             var touches = (event.originalEvent || event).touches[0];
@@ -575,6 +609,9 @@
         },
 
         ontouchmove: function (event) {
+            if (this.options.stopTouchEventsPropagation) {
+                this.stopPropagation(event);
+            }
             // jQuery doesn't copy touch event properties by default,
             // so we have to access the originalEvent object:
             var touches = (event.originalEvent || event).touches[0],
@@ -636,7 +673,10 @@
             }
         },
 
-        ontouchend: function () {
+        ontouchend: function (event) {
+            if (this.options.stopTouchEventsPropagation) {
+                this.stopPropagation(event);
+            }
             var index = this.index,
                 speed = this.options.transitionSpeed,
                 slideWidth = this.slideWidth,
@@ -645,8 +685,8 @@
                 isValidSlide = (isShortDuration && Math.abs(this.touchDelta.x) > 20) ||
                     Math.abs(this.touchDelta.x) > slideWidth / 2,
                 // Determine if slide attempt is past start or end:
-                isPastBounds = (!index && this.touchDelta.x > 0)
-                        || (index === this.num - 1 && this.touchDelta.x < 0),
+                isPastBounds = (!index && this.touchDelta.x > 0) ||
+                        (index === this.num - 1 && this.touchDelta.x < 0),
                 isValidClose = !isValidSlide && this.options.closeOnSwipeUpOrDown &&
                     ((isShortDuration && Math.abs(this.touchDelta.y) > 20) ||
                         Math.abs(this.touchDelta.y) > this.slideHeight / 2),
@@ -704,6 +744,13 @@
                     // Move back into position
                     this.translateY(index, 0, speed);
                 }
+            }
+        },
+
+        ontouchcancel: function (event) {
+            if (this.touchStart) {
+                this.ontouchend(event);
+                delete this.touchStart;
             }
         },
 
@@ -798,20 +845,7 @@
                     return $(target).hasClass(className) ||
                         $(parent).hasClass(className);
                 };
-            if (parent === this.slidesContainer[0]) {
-                // Click on slide background
-                this.preventDefault(event);
-                if (options.closeOnSlideClick) {
-                    this.close();
-                } else {
-                    this.toggleControls();
-                }
-            } else if (parent.parentNode &&
-                    parent.parentNode === this.slidesContainer[0]) {
-                // Click on displayed element
-                this.preventDefault(event);
-                this.toggleControls();
-            } else if (isTarget(options.toggleClass)) {
+            if (isTarget(options.toggleClass)) {
                 // Click on "toggle" control
                 this.preventDefault(event);
                 this.toggleControls();
@@ -831,6 +865,19 @@
                 // Click on "play-pause" control
                 this.preventDefault(event);
                 this.toggleSlideshow();
+            } else if (parent === this.slidesContainer[0]) {
+                // Click on slide background
+                this.preventDefault(event);
+                if (options.closeOnSlideClick) {
+                    this.close();
+                } else {
+                    this.toggleControls();
+                }
+            } else if (parent.parentNode &&
+                    parent.parentNode === this.slidesContainer[0]) {
+                // Click on displayed element
+                this.preventDefault(event);
+                this.toggleControls();
             }
         },
 
@@ -1023,7 +1070,7 @@
         positionSlide: function (index) {
             var slide = this.slides[index];
             slide.style.width = this.slideWidth + 'px';
-            if (this.support.transition) {
+            if (this.support.transform) {
                 slide.style.left = (index * -this.slideWidth) + 'px';
                 this.move(index, this.index > index ? -this.slideWidth :
                         (this.index < index ? this.slideWidth : 0), 0);
@@ -1059,11 +1106,11 @@
                 this.positionSlide(i);
             }
             // Reposition the slides before and after the given index:
-            if (this.options.continuous && this.support.transition) {
+            if (this.options.continuous && this.support.transform) {
                 this.move(this.circle(this.index - 1), -this.slideWidth, 0);
                 this.move(this.circle(this.index + 1), this.slideWidth, 0);
             }
-            if (!this.support.transition) {
+            if (!this.support.transform) {
                 this.slidesContainer[0].style.left =
                     (this.index * -this.slideWidth) + 'px';
             }
@@ -1166,7 +1213,7 @@
             this.container.on('click', proxyListener);
             if (this.support.touch) {
                 slidesContainer
-                    .on('touchstart touchmove touchend', proxyListener);
+                    .on('touchstart touchmove touchend touchcancel', proxyListener);
             } else if (this.options.emulateTouchEvents &&
                     this.support.transition) {
                 slidesContainer
@@ -1189,7 +1236,7 @@
             this.container.off('click', proxyListener);
             if (this.support.touch) {
                 slidesContainer
-                    .off('touchstart touchmove touchend', proxyListener);
+                    .off('touchstart touchmove touchend touchcancel', proxyListener);
             } else if (this.options.emulateTouchEvents &&
                     this.support.transition) {
                 slidesContainer
@@ -1222,12 +1269,20 @@
                 };
             this.container = $(this.options.container);
             if (!this.container.length) {
+                this.console.log(
+                    'blueimp Gallery: Widget container not found.',
+                    this.options.container
+                );
                 return false;
             }
             this.slidesContainer = this.container.find(
                 this.options.slidesContainer
             ).first();
             if (!this.slidesContainer.length) {
+                this.console.log(
+                    'blueimp Gallery: Slides container not found.',
+                    this.options.slidesContainer
+                );
                 return false;
             }
             this.titleElement = this.container.find(

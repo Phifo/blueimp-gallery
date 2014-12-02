@@ -1,5 +1,5 @@
 /*
- * blueimp Gallery YouTube Video Factory JS 1.1.0
+ * blueimp Gallery YouTube Video Factory JS 1.2.0
  * https://github.com/blueimp/Gallery
  *
  * Copyright 2013, Sebastian Tschan
@@ -9,8 +9,7 @@
  * http://www.opensource.org/licenses/MIT
  */
 
-/*jslint regexp: true */
-/*global define, window, document, YT */
+/* global define, window, document, YT */
 
 (function (factory) {
     'use strict';
@@ -39,7 +38,9 @@
         youTubeVideoIdProperty: 'youtube',
         // Optional object with parameters passed to the YouTube video player:
         // https://developers.google.com/youtube/player_parameters
-        youTubePlayerVars: undefined,
+        youTubePlayerVars: {
+            wmode: 'transparent'
+        },
         // Require a click on the native YouTube player for the initial playback:
         youTubeClickToPlay: true
     });
@@ -105,8 +106,21 @@
         },
 
         onPause: function () {
-            this.listeners.pause();
-            delete this.playStatus;
+            Gallery.prototype.setTimeout.call(
+                this,
+                this.checkSeek,
+                null,
+                2000
+            );
+        },
+
+        checkSeek: function () {
+            if (this.stateChange === YT.PlayerState.PAUSED ||
+                    this.stateChange === YT.PlayerState.ENDED) {
+                // check if current state change is actually paused
+                this.listeners.pause();
+                delete this.playStatus;
+            }
         },
 
         onStateChange: function (event) {
@@ -120,6 +134,8 @@
                 this.onPause();
                 break;
             }
+            // Save most recent state change to this.stateChange
+            this.stateChange = event.data;
         },
 
         onError: function (event) {
@@ -184,15 +200,23 @@
         YouTubePlayer: YouTubePlayer,
 
         textFactory: function (obj, callback) {
-            var videoId = this.getItemProperty(obj, this.options.youTubeVideoIdProperty);
+            var options = this.options,
+                videoId = this.getItemProperty(obj, options.youTubeVideoIdProperty);
             if (videoId) {
+                if (this.getItemProperty(obj, options.urlProperty) === undefined) {
+                    obj[options.urlProperty] = '//www.youtube.com/watch?v=' + videoId;
+                }
+                if (this.getItemProperty(obj, options.videoPosterProperty) === undefined) {
+                    obj[options.videoPosterProperty] = '//img.youtube.com/vi/' + videoId +
+                        '/maxresdefault.jpg';
+                }
                 return this.videoFactory(
                     obj,
                     callback,
                     new YouTubePlayer(
                         videoId,
-                        this.options.youTubePlayerVars,
-                        this.options.youTubeClickToPlay
+                        options.youTubePlayerVars,
+                        options.youTubeClickToPlay
                     )
                 );
             }
