@@ -1,5 +1,5 @@
 /*
- * blueimp Gallery Fullscreen JS 1.1.0
+ * blueimp Gallery Fullscreen JS 1.2.0
  * https://github.com/blueimp/Gallery
  *
  * Copyright 2013, Sebastian Tschan
@@ -9,7 +9,7 @@
  * http://www.opensource.org/licenses/MIT
  */
 
-/*global define, window, document */
+/* global define, window, document */
 
 (function (factory) {
     'use strict';
@@ -35,14 +35,15 @@
     });
 
     var initialize = Gallery.prototype.initialize,
-        handleClose = Gallery.prototype.handleClose;
+        close = Gallery.prototype.close;
 
     $.extend(Gallery.prototype, {
 
         getFullScreenElement: function () {
             return document.fullscreenElement ||
                 document.webkitFullscreenElement ||
-                document.mozFullScreenElement;
+                document.mozFullScreenElement ||
+                document.msFullscreenElement;
         },
 
         requestFullScreen: function (element) {
@@ -52,6 +53,8 @@
                 element.webkitRequestFullscreen();
             } else if (element.mozRequestFullScreen) {
                 element.mozRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
             }
         },
 
@@ -62,6 +65,8 @@
                 document.webkitCancelFullScreen();
             } else if (document.mozCancelFullScreen) {
                 document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
             }
         },
 
@@ -72,11 +77,11 @@
             }
         },
 
-        handleClose: function () {
+        close: function () {
             if (this.getFullScreenElement() === this.container[0]) {
                 this.exitFullScreen();
             }
-            handleClose.call(this);
+            close.call(this);
         }
 
     });
