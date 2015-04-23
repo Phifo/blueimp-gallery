@@ -1,5 +1,5 @@
 /*
- * blueimp Gallery YouTube Video Factory JS 1.1.0
+ * blueimp Gallery Vimeo Video Factory JS 1.2.0
  * https://github.com/blueimp/Gallery
  *
  * Copyright 2013, Sebastian Tschan
@@ -9,8 +9,7 @@
  * http://www.opensource.org/licenses/MIT
  */
 
-/*jslint regexp: true */
-/*global define, window, document, YT */
+/* global define, window, document, location, $f */
 
 (function (factory) {
     'use strict';
@@ -35,25 +34,29 @@
     }
 
     $.extend(Gallery.prototype.options, {
-        // The list object property (or data attribute) with the YouTube video id:
-        youTubeVideoIdProperty: 'youtube',
-        // Optional object with parameters passed to the YouTube video player:
-        // https://developers.google.com/youtube/player_parameters
-        youTubePlayerVars: undefined,
-        // Require a click on the native YouTube player for the initial playback:
-        youTubeClickToPlay: true
+        // The list object property (or data attribute) with the Vimeo video id:
+        vimeoVideoIdProperty: 'vimeo',
+        // The URL for the Vimeo video player, can be extended with custom parameters:
+        // https://developer.vimeo.com/player/embedding
+        vimeoPlayerUrl: '//player.vimeo.com/video/VIDEO_ID?api=1&player_id=PLAYER_ID',
+        // The prefix for the Vimeo video player ID:
+        vimeoPlayerIdPrefix: 'vimeo-player-',
+        // Require a click on the native Vimeo player for the initial playback:
+        vimeoClickToPlay: true
     });
 
     var textFactory = Gallery.prototype.textFactory || Gallery.prototype.imageFactory,
-        YouTubePlayer = function (videoId, playerVars, clickToPlay) {
+        VimeoPlayer = function (url, videoId, playerId, clickToPlay) {
+            this.url = url;
             this.videoId = videoId;
-            this.playerVars = playerVars;
+            this.playerId = playerId;
             this.clickToPlay = clickToPlay;
             this.element = document.createElement('div');
             this.listeners = {};
-        };
+        },
+        counter = 0;
 
-    $.extend(YouTubePlayer.prototype, {
+    $.extend(VimeoPlayer.prototype, {
 
         canPlayType: function () {
             return true;
@@ -66,32 +69,50 @@
 
         loadAPI: function () {
             var that = this,
-                onYouTubeIframeAPIReady = window.onYouTubeIframeAPIReady,
-                apiUrl = '//www.youtube.com/iframe_api',
+                apiUrl = '//' + (location.protocol === 'https' ? 'secure-' : '') +
+                    'a.vimeocdn.com/js/froogaloop2.min.js',
                 scriptTags = document.getElementsByTagName('script'),
                 i = scriptTags.length,
-                scriptTag;
-            window.onYouTubeIframeAPIReady = function () {
-                if (onYouTubeIframeAPIReady) {
-                    onYouTubeIframeAPIReady.apply(this);
-                }
-                if (that.playOnReady) {
-                    that.play();
-                }
-            };
+                scriptTag,
+                called,
+                callback = function () {
+                    if (!called && that.playOnReady) {
+                        that.play();
+                    }
+                    called = true;
+                };
             while (i) {
                 i -= 1;
                 if (scriptTags[i].src === apiUrl) {
-                    return;
+                    scriptTag = scriptTags[i];
+                    break;
                 }
             }
-            scriptTag = document.createElement('script');
-            scriptTag.src = apiUrl;
+            if (!scriptTag) {
+                scriptTag = document.createElement('script');
+                scriptTag.src = apiUrl;
+            }
+            $(scriptTag).on('load', callback);
             scriptTags[0].parentNode.insertBefore(scriptTag, scriptTags[0]);
+            // Fix for cached scripts on IE 8:
+            if (/loaded|complete/.test(scriptTag.readyState)) {
+                callback();
+            }
         },
 
         onReady: function () {
+            var that = this;
             this.ready = true;
+            this.player.addEvent('play', function () {
+                that.hasPlayed = true;
+                that.onPlaying();
+            });
+            this.player.addEvent('pause', function () {
+                that.onPause();
+            });
+            this.player.addEvent('finish', function () {
+                that.onPause();
+            });
             if (this.playOnReady) {
                 this.play();
             }
@@ -109,21 +130,14 @@
             delete this.playStatus;
         },
 
-        onStateChange: function (event) {
-            switch (event.data) {
-            case YT.PlayerState.PLAYING:
-                this.hasPlayed = true;
-                this.onPlaying();
-                break;
-            case YT.PlayerState.PAUSED:
-            case YT.PlayerState.ENDED:
-                this.onPause();
-                break;
-            }
-        },
-
-        onError: function (event) {
-            this.listeners.error(event);
+        insertIframe: function () {
+            var iframe = document.createElement('iframe');
+            iframe.src = this.url
+                .replace('VIDEO_ID', this.videoId)
+                .replace('PLAYER_ID', this.playerId);
+            iframe.id = this.playerId;
+            this.element.parentNode.replaceChild(iframe, this.element);
+            this.element = iframe;
         },
 
         play: function () {
@@ -141,27 +155,17 @@
                     // the video playback:
                     this.onPlaying();
                 } else {
-                    this.player.playVideo();
+                    this.player.api('play');
                 }
             } else {
                 this.playOnReady = true;
-                if (!(window.YT && YT.Player)) {
+                if (!window.$f) {
                     this.loadAPI();
                 } else if (!this.player) {
-                    this.player = new YT.Player(this.element, {
-                        videoId: this.videoId,
-                        playerVars: this.playerVars,
-                        events: {
-                            onReady: function () {
-                                that.onReady();
-                            },
-                            onStateChange: function (event) {
-                                that.onStateChange(event);
-                            },
-                            onError: function (event) {
-                                that.onError(event);
-                            }
-                        }
+                    this.insertIframe();
+                    this.player = $f(this.element);
+                    this.player.addEvent('ready', function () {
+                        that.onReady();
                     });
                 }
             }
@@ -169,7 +173,7 @@
 
         pause: function () {
             if (this.ready) {
-                this.player.pauseVideo();
+                this.player.api('pause');
             } else if (this.playStatus) {
                 delete this.playOnReady;
                 this.listeners.pause();
@@ -181,18 +185,24 @@
 
     $.extend(Gallery.prototype, {
 
-        YouTubePlayer: YouTubePlayer,
+        VimeoPlayer: VimeoPlayer,
 
         textFactory: function (obj, callback) {
-            var videoId = this.getItemProperty(obj, this.options.youTubeVideoIdProperty);
+            var options = this.options,
+                videoId = this.getItemProperty(obj, options.vimeoVideoIdProperty);
             if (videoId) {
+                if (this.getItemProperty(obj, options.urlProperty) === undefined) {
+                    obj[options.urlProperty] = '//vimeo.com/' + videoId;
+                }
+                counter += 1;
                 return this.videoFactory(
                     obj,
                     callback,
-                    new YouTubePlayer(
+                    new VimeoPlayer(
+                        options.vimeoPlayerUrl,
                         videoId,
-                        this.options.youTubePlayerVars,
-                        this.options.youTubeClickToPlay
+                        options.vimeoPlayerIdPrefix + counter,
+                        options.vimeoClickToPlay
                     )
                 );
             }
